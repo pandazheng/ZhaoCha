@@ -40,67 +40,28 @@
 	// always call "super" init
 	// Apple recommends to re-assign "self" with the "super's" return value
 	if( (self=[super init]) ) {
-		
-		// create and initialize a Label
-		CCLabelTTF *label = [CCLabelTTF labelWithString:@"Hello World" fontName:@"Marker Felt" fontSize:64];
-
-		// ask director for the window size
-		CGSize size = [[CCDirector sharedDirector] winSize];
-	
-		// position the label on the center of the screen
-		label.position =  ccp( size.width /2 , size.height/2 );
-		
-		// add the label as a child to this Layer
-		[self addChild: label];
-		
-		
-		
-		//
-		// Leaderboards and Achievements
-		//
-		
-		// Default font size will be 28 points.
-		[CCMenuItemFont setFontSize:28];
-		
-		// Achievement Menu Item using blocks
-		CCMenuItem *itemAchievement = [CCMenuItemFont itemWithString:@"Achievements" block:^(id sender) {
-			
-			
-			GKAchievementViewController *achivementViewController = [[GKAchievementViewController alloc] init];
-			achivementViewController.achievementDelegate = self;
-			
-			AppController *app = (AppController*) [[UIApplication sharedApplication] delegate];
-			
-			[[app navController] presentModalViewController:achivementViewController animated:YES];
-			
-			[achivementViewController release];
-		}
-									   ];
-
-		// Leaderboard Menu Item using blocks
-		CCMenuItem *itemLeaderboard = [CCMenuItemFont itemWithString:@"Leaderboard" block:^(id sender) {
-			
-			
-			GKLeaderboardViewController *leaderboardViewController = [[GKLeaderboardViewController alloc] init];
-			leaderboardViewController.leaderboardDelegate = self;
-			
-			AppController *app = (AppController*) [[UIApplication sharedApplication] delegate];
-			
-			[[app navController] presentModalViewController:leaderboardViewController animated:YES];
-			
-			[leaderboardViewController release];
-		}
-									   ];
-		
-		CCMenu *menu = [CCMenu menuWithItems:itemAchievement, itemLeaderboard, nil];
-		
-		[menu alignItemsHorizontallyWithPadding:20];
-		[menu setPosition:ccp( size.width/2, size.height/2 - 50)];
-		
-		// Add the menu to the layer
-		[self addChild:menu];
-
-	}
+        
+        self.isTouchEnabled = YES;
+        //init data
+        CGPoint posOrign = ccp(445,195);
+        //这里的点应该是从本地读取，这里认定是(445,195)
+        posFlag = ccp(posOrign.x,320 - posOrign.y);
+        
+        //点击半径设置为30像素
+        rForClick = 30;
+        
+        //初始化背景图，也就是斑马的图，并添加
+        CCSprite *imgBg = [CCSprite spriteWithFile:@"img.jpg"];
+        imgBg.anchorPoint = ccp(0,0);
+        [self addChild:imgBg];
+        
+        //初始化文字标签
+        labelSucess = [CCLabelTTF labelWithString:@"Found it!" fontName:@"Marker Felt" fontSize:64];
+        labelSucess.position = ccp(240,160);
+        [self addChild:labelSucess];
+        
+        labelSucess.visible = NO;
+    }
 	return self;
 }
 
@@ -113,6 +74,52 @@
 	
 	// don't forget to call "super dealloc"
 	[super dealloc];
+}
+
+#pragma mark logic things
+- (void) judgeByPos:(CGPoint)touchPos
+{
+    if ([self checkPos:touchPos] == YES)
+    {
+        [self showSuccessResult];
+    }
+}
+
+- (BOOL) checkPos:(CGPoint)touchPos
+{
+    float a = touchPos.x - posFlag.x;
+    float b = touchPos.y - posFlag.y;
+    
+    float c = a*a + b*b;
+    if (c > rForClick*rForClick)
+    {
+        return NO;
+    }
+    
+    return YES;
+}
+
+- (void) showSuccessResult
+{
+    labelSucess.visible = YES;
+}
+
+#pragma mark touch events
+- (void) ccTouchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
+{
+    //点击结束之后，调用
+    //获取触摸点的数组
+    UITouch *touch = [touches anyObject];
+    if (touch.tapCount == 1)
+    {
+        //把点做简单的变换
+        CGPoint location = [touch locationInView:[touch view]];
+        location = [[CCDirector sharedDirector] convertToGL:location];
+        
+        
+        //判断单击是否正确
+        [self judgeByPos:location];
+    }
 }
 
 #pragma mark GameKit delegate
